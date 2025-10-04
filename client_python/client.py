@@ -60,7 +60,7 @@ def listen_server(sock, gui):
                 break
             print("Servidor:", data)
 
-            # Ejemplo: MOVED X=3 Y=5
+            
             if data.startswith("MOVED"):
                 parts = data.split()
                 x = int(parts[1].split("=")[1])
