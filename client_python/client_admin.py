@@ -1,5 +1,4 @@
-import socket
-import threading
+import socket, threading
 
 HOST = "127.0.0.1"
 PORT = 8000
@@ -7,30 +6,25 @@ PORT = 8000
 def recibir(sock):
     while True:
         try:
-            data = sock.recv(1024).decode("utf-8")
+            data = sock.recv(2048).decode('utf-8', errors='replace')
             if not data:
                 break
-            print(f"[Servidor] {data.strip()}")
-        except:
+            print("[Servidor]", data.strip())
+        except Exception as e:
+            print("Error en recv:", e)
             break
 
-def main():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
-    print("Conectado al servidor.")
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((HOST, PORT))
+print("Conectado al servidor")
 
-    # Hilo para escuchar respuestas del servidor
-    hilo = threading.Thread(target=recibir, args=(sock,), daemon=True)
-    hilo.start()
+t = threading.Thread(target=recibir, args=(sock,), daemon=True)
+t.start()
 
-    # Loop para enviar comandos
-    while True:
-        msg = input(">>> ")  # escribes AUTH, SET, LIST, etc.
-        if msg.lower() == "exit":
-            break
-        sock.sendall(msg.encode("utf-8"))
+while True:
+    cmd = input(">>> ")
+    if cmd.lower() in ("exit", "quit"):
+        break
+    sock.sendall((cmd + "\n").encode('utf-8'))
 
-    sock.close()
-
-if __name__ == "__main__":
-    main()
+sock.close()
