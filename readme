@@ -1,95 +1,173 @@
-## 1. Introducción
+1. Introducción
 
-En este proyecto se desarrolló un sistema cliente/servidor que permite controlar un robot simulado en un plano cartesiano.
-El servidor está programado en **C (Winsock2 en Windows)** y los clientes en **Python (sockets + Tkinter para interfaz gráfica)**.
-Se implementaron funciones de autenticación, control remoto y generación de datos de sensores simulados.
+Este proyecto implementa un sistema cliente/servidor que permite controlar un robot simulado en un plano cartesiano 11×11 mediante comunicación TCP.
 
----
+El servidor está desarrollado en C (Winsock2) y los clientes en Python, utilizando sockets, hilos y una interfaz gráfica en Tkinter.
 
-## 2. Arquitectura del sistema
+El sistema soporta autenticación, movimientos del robot, difusión de estado a todos los clientes y generación de datos simulados de sensores.
 
-* **Servidor (C / Winsock2):**
+2. Arquitectura del sistema
 
-  * Maneja múltiples clientes concurrentes con hilos.
-  * Procesa comandos de control (SET, MOVE, LIST).
-  * Genera periódicamente valores aleatorios de sensores (temperatura, humedad, presión).
-  * Envía actualizaciones de estado a todos los clientes conectados.
+Servidor – C (Winsock2)
+-Maneja múltiples clientes mediante hilos.
+-Controla el estado global del robot.
+-Procesa comandos:
+-AUTH, SET, MOVE, LIST
+-Valida límites del plano cartesiano.
+-Envía actualizaciones de movimiento a todos los clientes.
+-Genera datos aleatorios de sensores cada cierto tiempo.
 
-* **Cliente Admin (Python / consola):**
+Cliente Admin – Python (consola)
 
-  * Se conecta al servidor por socket TCP.
-  * Soporta autenticación con usuario/contraseña (`AUTH admin 1234`).
-  * Permite enviar comandos (`SET x y`, `MOVE UP`, `MOVE DOWN`, `LIST`).
-  * Recibe y muestra respuestas y datos de sensores.
+-Se conecta por TCP.
+-Se autentica con AUTH admin 1234.
+-Permite enviar comandos:
+-SET x y
+-MOVE UP/DOWN/LEFT/RIGHT
+-LIST
+-Recibe actualizaciones y datos de sensores.
 
-* **Cliente GUI (Python / Tkinter):**
+Cliente GUI – Python (Tkinter)
 
-  * Muestra el robot en un plano cartesiano 11x11.
-  * Actualiza en tiempo real la posición recibida del servidor.
-  * Recibe los datos de sensores y los imprime en consola.
+-Muestra el robot en un plano 11×11.
+-Escucha mensajes del servidor y actualiza la posición en tiempo real.
+-Imprime los datos de sensores en consola.
 
----
+3. Comandos implementados
+Comando	Descripción
+AUTH user    pass	Autentica usuario (solo admin tiene control).
+SET x y	     Movimiento absoluto dentro del plano.
+MOVE UP	     Mueve el robot una celda hacia arriba.
+MOVE DOWN	   Mueve el robot una celda hacia abajo.
+MOVE LEFT	   Mueve el robot una celda a la izquierda.
+MOVE RIGHT	 Mueve el robot una celda a la derecha.
+LIST	       Lista usuarios conectados.
+SENSORS	    (Automático) Datos de temperatura, humedad y presión.
 
-## 3. Comandos implementados
+4. Validaciones implementadas
 
-| Comando          |  descripcion   |
+Autenticación obligatoria para comandos de movimiento.
+-Límite de coordenadas: 0 ≤ x,y < 11.
+-Movimientos fuera del rango devuelven:
 
-| `AUTH user pass` | Autentica usuario. Solo admin puede mover al robot.                            |
-| `SET x y`        | Mueve el robot a coordenadas absolutas (dentro del rango 0–10).                |
-| `MOVE UP`        | Mueve al robot hacia arriba (-Y).                                              |
-| `MOVE DOWN`      | Mueve al robot hacia abajo (+Y).                                               |
-| `MOVE LEFT`      | Mueve al robot hacia la izquierda (-X).                                        |
-| `MOVE RIGHT`     | Mueve al robot hacia la derecha (+X).                                          |
-| `LIST`           | Devuelve la lista de clientes conectados y sus nombres de usuario.             |
-| `SENSORS`        | (automático) El servidor envía cada cierto tiempo datos aleatorios de sensores (Temp, Humedad, Presión). |
+BLOCKED
 
----
+-Comandos inválidos:
 
-## 4. Validaciones implementadas
+UNKNOWN COMMAND
 
-* Autenticación obligatoria antes de mover el robot.
-* Verificación de límites del plano cartesiano (0 ≤ x,y < 11).
-* Bloqueo de movimientos inválidos (`BLOCKED`).
-* Respuesta estándar para comandos desconocidos (`UNKNOWN COMMAND`).
+5. Datos simulados de sensores
 
----
+El servidor genera automáticamente cada 15 segundos:
 
-## 5. Datos simulados de sensores
+-Temperatura: 15–35 °C
+-Humedad: 20–90 %
+-Presión: 950–1050 hPa
+-Formato del mensaje enviado:
 
-El servidor genera periódicamente: cada 15 segundos
-
-* **Temperatura (°C):** valores aleatorios entre 15 y 35.
-* **Humedad (%):** valores aleatorios entre 20 y 90.
-* **Presión (hPa):** valores aleatorios entre 950 y 1050.
-
-Estos se envían a todos los clientes en formato:
-
-```
 SENSORS TEMP=23 HUM=45 PRESS=1013
-```
 
----
+6. Flujo de uso del sistema
 
-## 6. Flujo de uso
+1).Se inicia el servidor en C.
 
-1. El servidor en C se ejecuta y queda escuchando en el puerto 8000.
-2. Se conectan uno o varios clientes (admin o GUI).
-3. El admin se autentica (`AUTH admin 1234`).
-4. El admin envía comandos de movimiento (`SET`, `MOVE`).
-5. El servidor actualiza la posición del robot y la transmite a todos los clientes.
-6. El cliente GUI actualiza gráficamente la posición en la grilla.
-7. Periódicamente, el servidor envía datos de sensores simulados a todos los clientes.
+2).Se abren uno o varios clientes (admin o GUI).
 
----
+3).El admin se autentica con AUTH admin 1234.
 
-## 7. Resultados
+4).El admin envía comandos de movimiento.
 
-* El robot se mueve correctamente en el plano 11x11.
-* Los clientes reciben actualizaciones en tiempo real.
-* El servidor gestiona múltiples clientes sin bloqueos.
-* Se generaron correctamente datos de sensores.
+5).El servidor valida y actualiza el estado del robot.
+
+6).El servidor envía la posición a todos los clientes.
+
+7).El cliente GUI actualiza la posición en pantalla.
+
+8).El servidor envía periódicamente valores de sensores.
+
+7. Ejemplos de Procedimientos
+7.1 Autenticación
+
+-Admin:
+
+AUTH admin 1234
 
 
+-Respuesta:
+
+AUTH OK
+
+7.2 Movimiento absoluto (SET)
+
+-Comando:
+
+SET 3 7
 
 
+-Respuesta:
 
+MOVED X=3 Y=7
+
+
+GUI: Robot se mueve a (3,7).
+
+7.3 Movimiento relativo (MOVE)
+
+-Comando:
+
+MOVE UP
+
+
+-Respuesta:
+
+MOVED X=3 Y=6
+
+
+-Si intenta salirse del plano:
+
+MOVE UP
+BLOCKED
+
+7.4 Listar clientes conectados
+LIST
+
+
+-Respuesta típica:
+
+USERS:
+anonimo
+admin
+
+7.5 Datos de sensores
+
+-Datos enviados automáticamente:
+
+SENSORS TEMP=30 HUM=52 PRESS=1007
+
+
+El cliente GUI los muestra en consola.
+
+8. Resultados obtenidos
+
+-Robot totalmente funcional en cuadrícula 11×11.
+-Comunicación estable entre múltiples clientes y el servidor.
+-GUI actualizada en tiempo real.
+-Sensores simulados funcionando correctamente.
+-Movimientos verificados y limitados correctamente.
+-Autenticación funcional con control de permisos.
+
+9. Conclusión
+
+El sistema cumple todos los requisitos propuestos:
+
+-Comunicación TCP cliente-servidor.
+-Multiproceso con hilos.
+-Control remoto del robot.
+-Movimientos absolutos y relativos.
+-Validación de límites.
+-Interfaz gráfica funcional.
+-Difusión de mensajes.
+-Simulación de sensores.
+-Documentación con ejemplos de procedimientos.
+
+El proyecto queda completo y funcionando correctamente, con una arquitectura modular, estable y extensible.
