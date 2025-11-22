@@ -1,0 +1,95 @@
+## 1. Introducción
+
+En este proyecto se desarrolló un sistema cliente/servidor que permite controlar un robot simulado en un plano cartesiano.
+El servidor está programado en **C (Winsock2 en Windows)** y los clientes en **Python (sockets + Tkinter para interfaz gráfica)**.
+Se implementaron funciones de autenticación, control remoto y generación de datos de sensores simulados.
+
+---
+
+## 2. Arquitectura del sistema
+
+* **Servidor (C / Winsock2):**
+
+  * Maneja múltiples clientes concurrentes con hilos.
+  * Procesa comandos de control (SET, MOVE, LIST).
+  * Genera periódicamente valores aleatorios de sensores (temperatura, humedad, presión).
+  * Envía actualizaciones de estado a todos los clientes conectados.
+
+* **Cliente Admin (Python / consola):**
+
+  * Se conecta al servidor por socket TCP.
+  * Soporta autenticación con usuario/contraseña (`AUTH admin 1234`).
+  * Permite enviar comandos (`SET x y`, `MOVE UP`, `MOVE DOWN`, `LIST`).
+  * Recibe y muestra respuestas y datos de sensores.
+
+* **Cliente GUI (Python / Tkinter):**
+
+  * Muestra el robot en un plano cartesiano 11x11.
+  * Actualiza en tiempo real la posición recibida del servidor.
+  * Recibe los datos de sensores y los imprime en consola.
+
+---
+
+## 3. Comandos implementados
+
+| Comando          |  descripcion   |
+
+| `AUTH user pass` | Autentica usuario. Solo admin puede mover al robot.                            |
+| `SET x y`        | Mueve el robot a coordenadas absolutas (dentro del rango 0–10).                |
+| `MOVE UP`        | Mueve al robot hacia arriba (-Y).                                              |
+| `MOVE DOWN`      | Mueve al robot hacia abajo (+Y).                                               |
+| `MOVE LEFT`      | Mueve al robot hacia la izquierda (-X).                                        |
+| `MOVE RIGHT`     | Mueve al robot hacia la derecha (+X).                                          |
+| `LIST`           | Devuelve la lista de clientes conectados y sus nombres de usuario.             |
+| `SENSORS`        | (automático) El servidor envía cada cierto tiempo datos aleatorios de sensores (Temp, Humedad, Presión). |
+
+---
+
+## 4. Validaciones implementadas
+
+* Autenticación obligatoria antes de mover el robot.
+* Verificación de límites del plano cartesiano (0 ≤ x,y < 11).
+* Bloqueo de movimientos inválidos (`BLOCKED`).
+* Respuesta estándar para comandos desconocidos (`UNKNOWN COMMAND`).
+
+---
+
+## 5. Datos simulados de sensores
+
+El servidor genera periódicamente: cada 15 segundos
+
+* **Temperatura (°C):** valores aleatorios entre 15 y 35.
+* **Humedad (%):** valores aleatorios entre 20 y 90.
+* **Presión (hPa):** valores aleatorios entre 950 y 1050.
+
+Estos se envían a todos los clientes en formato:
+
+```
+SENSORS TEMP=23 HUM=45 PRESS=1013
+```
+
+---
+
+## 6. Flujo de uso
+
+1. El servidor en C se ejecuta y queda escuchando en el puerto 8000.
+2. Se conectan uno o varios clientes (admin o GUI).
+3. El admin se autentica (`AUTH admin 1234`).
+4. El admin envía comandos de movimiento (`SET`, `MOVE`).
+5. El servidor actualiza la posición del robot y la transmite a todos los clientes.
+6. El cliente GUI actualiza gráficamente la posición en la grilla.
+7. Periódicamente, el servidor envía datos de sensores simulados a todos los clientes.
+
+---
+
+## 7. Resultados
+
+* El robot se mueve correctamente en el plano 11x11.
+* Los clientes reciben actualizaciones en tiempo real.
+* El servidor gestiona múltiples clientes sin bloqueos.
+* Se generaron correctamente datos de sensores.
+
+
+
+
+
