@@ -66,108 +66,30 @@ El servidor genera automáticamente cada 15 segundos:
 -Formato del mensaje enviado:
 
 SENSORS TEMP=23 HUM=45 PRESS=1013
+```
 
-6. Flujo de uso del sistema
+---
 
-1).Se inicia el servidor en C.
+## 6. Flujo de uso
 
-2).Se abren uno o varios clientes (admin o GUI).
+1. El servidor en C se ejecuta y queda escuchando en el puerto 8000.
+2. Se conectan uno o varios clientes (admin o GUI).
+3. El admin se autentica (`AUTH admin 1234`).
+4. El admin envía comandos de movimiento (`SET`, `MOVE`).
+5. El servidor actualiza la posición del robot y la transmite a todos los clientes.
+6. El cliente GUI actualiza gráficamente la posición en la grilla.
+7. Periódicamente, el servidor envía datos de sensores simulados a todos los clientes.
 
-3).El admin se autentica con AUTH admin 1234.
+---
 
-4).El admin envía comandos de movimiento.
+## 7. Resultados
 
-5).El servidor valida y actualiza el estado del robot.
-
-6).El servidor envía la posición a todos los clientes.
-
-7).El cliente GUI actualiza la posición en pantalla.
-
-8).El servidor envía periódicamente valores de sensores.
-
-7. Ejemplos de Procedimientos
-7.1 Autenticación
-
--Admin:
-
-AUTH admin 1234
+* El robot se mueve correctamente en el plano 11x11.
+* Los clientes reciben actualizaciones en tiempo real.
+* El servidor gestiona múltiples clientes sin bloqueos.
+* Se generaron correctamente datos de sensores.
 
 
--Respuesta:
-
-AUTH OK
-
-7.2 Movimiento absoluto (SET)
-
--Comando:
-
-SET 3 7
 
 
--Respuesta:
 
-MOVED X=3 Y=7
-
-
-GUI: Robot se mueve a (3,7).
-
-7.3 Movimiento relativo (MOVE)
-
--Comando:
-
-MOVE UP
-
-
--Respuesta:
-
-MOVED X=3 Y=6
-
-
--Si intenta salirse del plano:
-
-MOVE UP
-BLOCKED
-
-7.4 Listar clientes conectados
-LIST
-
-
--Respuesta típica:
-
-USERS:
-anonimo
-admin
-
-7.5 Datos de sensores
-
--Datos enviados automáticamente:
-
-SENSORS TEMP=30 HUM=52 PRESS=1007
-
-
-El cliente GUI los muestra en consola.
-
-8. Resultados obtenidos
-
--Robot totalmente funcional en cuadrícula 11×11.
--Comunicación estable entre múltiples clientes y el servidor.
--GUI actualizada en tiempo real.
--Sensores simulados funcionando correctamente.
--Movimientos verificados y limitados correctamente.
--Autenticación funcional con control de permisos.
-
-9. Conclusión
-
-El sistema cumple todos los requisitos propuestos:
-
--Comunicación TCP cliente-servidor.
--Multiproceso con hilos.
--Control remoto del robot.
--Movimientos absolutos y relativos.
--Validación de límites.
--Interfaz gráfica funcional.
--Difusión de mensajes.
--Simulación de sensores.
--Documentación con ejemplos de procedimientos.
-
-El proyecto queda completo y funcionando correctamente, con una arquitectura modular, estable y extensible.
