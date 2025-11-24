@@ -125,7 +125,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     gui = RobotGUI(root)
 
-    HOST = "127.0.0.1"
+    HOST = "3.85.241.80"
     PORT = 8000
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     gui = RobotGUI(root)
 
-    HOST = "127.0.0.1"
+    HOST = "3.85.241.80"
     PORT = 8000
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))

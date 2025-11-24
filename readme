@@ -1,94 +1,228 @@
-1. Introducción
+Readme telematica
+Autor: Mateo Cadavid Ramírez  
 
-Este proyecto implementa un sistema cliente/servidor que permite controlar un robot simulado en un plano cartesiano 11×11 mediante comunicación TCP.
 
-El servidor está desarrollado en C (Winsock2) y los clientes en Python, utilizando sockets, hilos y una interfaz gráfica en Tkinter.
 
-El sistema soporta autenticación, movimientos del robot, difusión de estado a todos los clientes y generación de datos simulados de sensores.
+##  Descripción General
 
-2. Arquitectura del sistema
+Este proyecto implementa un servicio de comunicaciones distribuido entre:
 
-Servidor – C (Winsock2)
--Maneja múltiples clientes mediante hilos.
--Controla el estado global del robot.
--Procesa comandos:
--AUTH, SET, MOVE, LIST
--Valida límites del plano cartesiano.
--Envía actualizaciones de movimiento a todos los clientes.
--Genera datos aleatorios de sensores cada cierto tiempo.
+- Un **servidor en C** corriendo en una instancia EC2 de AWS.
+- Un **puente WebSocket en Python** (`ws_bridge.py`) también desplegado en EC2.
+- Dos clientes locales:
+  - `client.py` → Robot normal (mueve y recibe sensores)
+  - `client_admin.py` → Cliente administrador (envía comandos manuales)
+- Una **página web en tiempo real (`index.html`)** que muestra:
+  - La posición del robot en un plano cartesiano 11×11.
+  - Variables atmosféricas enviadas por el servidor (TEMP, HUM, PRES).
 
-Cliente Admin – Python (consola)
-
--Se conecta por TCP.
--Se autentica con AUTH admin 1234.
--Permite enviar comandos:
--SET x y
--MOVE UP/DOWN/LEFT/RIGHT
--LIST
--Recibe actualizaciones y datos de sensores.
-
-Cliente GUI – Python (Tkinter)
-
--Muestra el robot en un plano 11×11.
--Escucha mensajes del servidor y actualiza la posición en tiempo real.
--Imprime los datos de sensores en consola.
-
-3. Comandos implementados
-Comando	Descripción
-AUTH user    pass	Autentica usuario (solo admin tiene control).
-SET x y	     Movimiento absoluto dentro del plano.
-MOVE UP	     Mueve el robot una celda hacia arriba.
-MOVE DOWN	   Mueve el robot una celda hacia abajo.
-MOVE LEFT	   Mueve el robot una celda a la izquierda.
-MOVE RIGHT	 Mueve el robot una celda a la derecha.
-LIST	       Lista usuarios conectados.
-SENSORS	    (Automático) Datos de temperatura, humedad y presión.
-
-4. Validaciones implementadas
-
-Autenticación obligatoria para comandos de movimiento.
--Límite de coordenadas: 0 ≤ x,y < 11.
--Movimientos fuera del rango devuelven:
-
-BLOCKED
-
--Comandos inválidos:
-
-UNKNOWN COMMAND
-
-5. Datos simulados de sensores
-
-El servidor genera automáticamente cada 15 segundos:
-
--Temperatura: 15–35 °C
--Humedad: 20–90 %
--Presión: 950–1050 hPa
--Formato del mensaje enviado:
-
-SENSORS TEMP=23 HUM=45 PRESS=1013
-```
+Todo se comunica a través del puerto **8000 (TCP)** y el WebSocket usa el puerto **8765**.
 
 ---
 
-## 6. Flujo de uso
+#  Estructura del Proyecto
 
-1. El servidor en C se ejecuta y queda escuchando en el puerto 8000.
-2. Se conectan uno o varios clientes (admin o GUI).
-3. El admin se autentica (`AUTH admin 1234`).
-4. El admin envía comandos de movimiento (`SET`, `MOVE`).
-5. El servidor actualiza la posición del robot y la transmite a todos los clientes.
-6. El cliente GUI actualiza gráficamente la posición en la grilla.
-7. Periódicamente, el servidor envía datos de sensores simulados a todos los clientes.
+TELEMATICAROBOT/
+│
+├── client_python/
+│ ├── client.py
+│ ├── client_admin.py
+│ └── ws_bridge.py
+│
+├── server_c/
+│ ├── server.c
+│ ├── server <-- ejecutable compilado en Linux (EC2)
+│ └── server.exe <-- versión para Windows (solo referencia)
+│
+├── index.html <-- página web en tiempo real
+│
+├── readme <-- archivo original
+└── requerimientos <-- dependencias mínimas
 
----
 
-## 7. Resultados
 
-* El robot se mueve correctamente en el plano 11x11.
-* Los clientes reciben actualizaciones en tiempo real.
-* El servidor gestiona múltiples clientes sin bloqueos.
-* Se generaron correctamente datos de sensores.
+#  **1. Requisitos**
 
+## Local (Windows)
+- Python 3.10+  
+- VSCode  
+- Extensión Python  
+- Git Bash o PowerShell  
+
+## Servidor (EC2 – Ubuntu)
+- Instancia Ubuntu 22.04 o superior  
+- Puertos abiertos:  
+  - **8000/tcp** → Servidor C  
+  - **8765/tcp** → WebSocket  
+  - **80/tcp** (opcional si se sirve la página web desde EC2)
+
+Dependencias en EC2:
+sudo apt update
+sudo apt install python3 python3-pip python3-websockets build-essential
+
+
+
+#  **2. Instalación y Despliegue (Paso a Paso)**
+
+##  2.1. Subir proyecto a EC2
+En tu máquina local:
+
+scp -i llave.pem -r TelematicaRobot ubuntu@IP_EC2:/home/ubuntu/
+
+
+
+
+##  2.2. Compilar y ejecutar el servidor C en EC2
+
+cd ~/TelematicaRobot/server_c
+gcc server.c -o server
+nohup ./server > server.log 2>&1 &
+
+
+
+Verificar:
+
+ps aux | grep server
+
+
+##  2.3. Ejecutar el WebSocket Bridge en EC2
+
+cd ~/TelematicaRobot
+nohup python3 ws_bridge.py > ws.log 2>&1 &
+
+makefile
+Copiar código
+
+Verificar:
+
+ps aux | grep ws_bridge
+
+
+
+##  2.4. Verificar puertos abiertos
+
+sudo ss -tulnp | grep 8000
+sudo ss -tulnp | grep 8765
+
+
+
+##  2.5. Probar desde Windows (cliente normal)
+
+cd client_python
+python client.py
+
+
+
+##  2.6. Probar cliente administrador
+
+python client_admin.py
+
+
+
+Probar comandos:
+
+up
+down
+left
+right
+sensor
+
+
+
+##  2.7. Abrir página web en tiempo real
+
+Abre en tu navegador:
+
+file://C:/.../TelematicaRobot/index.html
+
+
+O si la sirves desde EC2:
+
+http://IP_EC2/index.html
+
+
+
+La página mostrará:
+
+- Robot en movimiento  
+- Datos atmosféricos en tiempo real  
+
+
+
+#  **3. Cómo funciona la comunicación**
+
+client_admin.py →
+
+client.py --------> Servidor C (puerto 8000) → ws_bridge.py → index.html (WebSocket 8765)
+
+
+#  **4. Ejemplos de uso (IMPORTANTE PARA LA NOTA)**
+
+## 4.1. Ejemplo de inicio del cliente
+
+PS> python client.py
+Conectado al servidor
+[Servidor] MOVED x=5 y=6
+[Servidor] SENSOR TEMP=25 HUM=50 PRES=1020
+
+
+
+## 4.2. Ejemplo de comandos desde admin
+
+up
+right
+
+
+
+## 4.3. Lo que aparece en el navegador
+
+- Cuadrícula 11×11  
+- Robot moviéndose en tiempo real  
+- Texto:
+
+SENSOR TEMP=23 HUM=45 PRES=1018
+
+
+
+#  5. Errores comunes y cómo resolverlos
+
+###  Error:  
+`ModuleNotFoundError: No module named 'websockets'`
+
+✔ Solución:
+
+sudo apt install python3-websockets
+
+
+
+###  Error:  
+`TimeoutError: WinError 10060`
+
+✔ Soluciones:
+
+1. Asegurar que el servidor en EC2 esté corriendo.  
+2. Abrir el puerto 8000 en AWS Security Groups.  
+3. Probar conectividad:
+
+Test-NetConnection IP_EC2 -Port 8000
+
+
+###  Error:  
+`python3: can't open file '/home/ubuntu/ws_bridge.py'`
+
+ Solución: asegurarse de estar en el directorio correcto:
+
+cd ~/TelematicaRobot
+nohup python3 ws_bridge.py > ws.log 2>&1 &
+
+
+
+###  Error: WebSocket no transmite al navegador
+
+✔ Revisar:
+
+sudo ss -tulnp | grep 8765
+tail -f ws.log
 
 
 

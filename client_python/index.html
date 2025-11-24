@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Robot en Tiempo Real</title>
+    <style>
+        body { font-family: Arial; background: #f3f3f3; padding: 20px; }
+        #grid { display: grid; grid-template-columns: repeat(11, 40px); gap: 4px; }
+        .cell { width: 40px; height: 40px; background: #ddd; display:flex; justify-content:center; align-items:center; }
+        .robot { background: red; }
+        #sensores { margin-top:20px; font-size:20px; }
+    </style>
+</head>
+<body>
+
+<h1>Robot en tiempo real</h1>
+
+<div id="grid"></div>
+
+<h2>Datos de sensores</h2>
+<div id="sensores">Esperando datos...</div>
+
+<script>
+    const grid = document.getElementById("grid");
+
+    // crear la grilla
+    const cells = [];
+    for (let i = 0; i < 121; i++) {
+        let div = document.createElement("div");
+        div.classList.add("cell");
+        grid.appendChild(div);
+        cells.push(div);
+    }
+
+    function drawRobot(x, y) {
+        cells.forEach(c => c.classList.remove("robot"));
+        let pos = y * 11 + x;
+        cells[pos].classList.add("robot");
+    }
+
+    // WebSocket hacia el puente local
+    let ws = new WebSocket("ws://3.85.241.80:8765");
+
+    ws.onmessage = (event) => {
+        let msg = event.data;
+        console.log("WS:", msg);
+
+        if (msg.startsWith("MOVED")) {
+            let parts = msg.split(" ");
+            let x = parseInt(parts[1].split("=")[1]);
+            let y = parseInt(parts[2].split("=")[1]);
+            drawRobot(x, y);
+        }
+
+        if (msg.startsWith("SENSOR")) {
+            document.getElementById("sensores").innerText = msg;
+        }
+    };
+</script>
+
+</body>
+</html>
